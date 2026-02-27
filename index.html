@@ -1,0 +1,777 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vizient Specialty Pharmacy KPI Dashboard (Template)</title>
+
+  <!-- Chart.js (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#0b1220;
+      --card:#121b2f;
+      --card2:#0f172a;
+      --text:#e8eefc;
+      --muted:#a9b4d0;
+      --line:#243152;
+      --good:#36d399;
+      --warn:#fbbf24;
+      --bad:#fb7185;
+      --accent:#60a5fa;
+      --radius:16px;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --pad: 16px;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background: radial-gradient(1200px 700px at 15% -10%, rgba(96,165,250,.25), transparent 55%),
+                  radial-gradient(1000px 600px at 90% 0%, rgba(54,211,153,.12), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      line-height:1.35;
+    }
+
+    .wrap{
+      max-width: 1200px;
+      margin: 24px auto 48px;
+      padding: 0 16px;
+    }
+
+    header{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:16px;
+      margin-bottom: 16px;
+    }
+
+    .title h1{
+      margin:0 0 6px 0;
+      font-size: 24px;
+      letter-spacing:.2px;
+    }
+    .title p{
+      margin:0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 12px;
+      border:1px solid var(--line);
+      background: rgba(18,27,47,.7);
+      border-radius: 999px;
+      box-shadow: var(--shadow);
+      color: var(--muted);
+      font-size: 12px;
+      white-space:nowrap;
+    }
+
+    .grid{
+      display:grid;
+      gap: 14px;
+    }
+
+    .card{
+      background: linear-gradient(180deg, rgba(18,27,47,.85), rgba(15,23,42,.85));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: var(--pad);
+    }
+
+    .filters{
+      display:grid;
+      grid-template-columns: 1.2fr 1fr 1fr 1fr auto;
+      gap: 10px;
+      align-items:end;
+    }
+
+    label{
+      display:block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    select, button{
+      width:100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(8,14,28,.85);
+      color: var(--text);
+      outline: none;
+    }
+    select:focus, button:focus{ border-color: rgba(96,165,250,.8); box-shadow: 0 0 0 3px rgba(96,165,250,.18); }
+
+    button{
+      cursor:pointer;
+      font-weight: 600;
+    }
+    button:hover{
+      border-color: rgba(96,165,250,.55);
+    }
+
+    .kpis{
+      display:grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+
+    .kpi{
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(8,14,28,.55);
+    }
+
+    .kpi .name{
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 10px;
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .kpi .value{
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .kpi .hint{
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .badge{
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      border:1px solid var(--line);
+      color: var(--muted);
+    }
+    .badge.good{ color: var(--good); border-color: rgba(54,211,153,.35); background: rgba(54,211,153,.08); }
+    .badge.warn{ color: var(--warn); border-color: rgba(251,191,36,.35); background: rgba(251,191,36,.08); }
+    .badge.bad{  color: var(--bad);  border-color: rgba(251,113,133,.35); background: rgba(251,113,133,.08); }
+
+    .main{
+      display:grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 14px;
+      align-items:start;
+    }
+
+    .charts{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    .chartHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .chartHead h2{
+      margin:0;
+      font-size: 14px;
+      letter-spacing:.2px;
+    }
+    .chartHead .sub{
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    canvas{ width:100% !important; height: 280px !important; }
+
+    .side h2{
+      margin:0 0 10px;
+      font-size: 14px;
+    }
+
+    .list{
+      margin:0;
+      padding-left: 18px;
+      color: var(--text);
+    }
+    .list li{
+      margin: 10px 0;
+      color: var(--text);
+    }
+    .small{
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    .footer{
+      margin-top: 14px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    details{
+      margin-top: 10px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(8,14,28,.45);
+      padding: 10px 12px;
+    }
+    summary{
+      cursor:pointer;
+      font-weight: 650;
+      color: var(--text);
+    }
+    .defs{
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .defs b{ color: var(--text); }
+
+    @media (max-width: 1050px){
+      .kpis{ grid-template-columns: repeat(2, 1fr); }
+      .filters{ grid-template-columns: 1fr 1fr; }
+      .main{ grid-template-columns: 1fr; }
+      canvas{ height: 260px !important; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <div class="title">
+        <h1>Specialty Pharmacy KPI Dashboard (Template)</h1>
+        <p>Access • Adherence • Total Cost Signals • Operational Bottlenecks (demo data)</p>
+      </div>
+      <div class="pill" id="stamp">Updated: —</div>
+    </header>
+
+    <!-- Filters -->
+    <section class="card">
+      <div class="filters">
+        <div>
+          <label for="payer">Payer</label>
+          <select id="payer">
+            <option value="All">All</option>
+            <option value="Commercial">Commercial</option>
+            <option value="Medicare">Medicare</option>
+            <option value="Medicaid">Medicaid</option>
+          </select>
+        </div>
+        <div>
+          <label for="drugClass">Drug / Therapeutic Class</label>
+          <select id="drugClass">
+            <option value="All">All</option>
+            <option value="Oncology">Oncology</option>
+            <option value="Rheumatology">Rheumatology</option>
+            <option value="Neurology">Neurology</option>
+          </select>
+        </div>
+        <div>
+          <label for="site">Site of Care</label>
+          <select id="site">
+            <option value="All">All</option>
+            <option value="Hospital Outpatient">Hospital Outpatient</option>
+            <option value="Freestanding Infusion">Freestanding Infusion</option>
+            <option value="Home Infusion">Home Infusion</option>
+          </select>
+        </div>
+        <div>
+          <label for="clinic">Clinic</label>
+          <select id="clinic">
+            <option value="All">All</option>
+            <option value="Clinic A">Clinic A</option>
+            <option value="Clinic B">Clinic B</option>
+            <option value="Clinic C">Clinic C</option>
+          </select>
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <button id="reset">Reset</button>
+        </div>
+      </div>
+
+      <details>
+        <summary>KPI definitions (click to open)</summary>
+        <div class="defs">
+          <p><b>Referral capture rate</b> = referrals kept in your process ÷ total referrals received.</p>
+          <p><b>Time-to-therapy</b> = days from referral to first fill or first dose.</p>
+          <p><b>Abandonment rate</b> = cases that start the process but never start therapy.</p>
+          <p><b>PDC (adherence)</b> = covered days ÷ eligible days (best for chronic refill therapies).</p>
+          <p><b>Denial rate</b> = prior auth denials ÷ prior auth submissions.</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- KPI tiles -->
+    <section class="card">
+      <div class="kpis">
+        <div class="kpi">
+          <div class="name">
+            <span>Referral capture rate</span>
+            <span class="badge" id="bCapture">—</span>
+          </div>
+          <div class="value" id="kCapture">—</div>
+          <div class="hint">Higher is better (watch sudden drops)</div>
+        </div>
+
+        <div class="kpi">
+          <div class="name">
+            <span>Median time-to-therapy</span>
+            <span class="badge" id="bTTT">—</span>
+          </div>
+          <div class="value" id="kTTT">—</div>
+          <div class="hint">Days (trend down; segment by payer)</div>
+        </div>
+
+        <div class="kpi">
+          <div class="name">
+            <span>Abandonment rate</span>
+            <span class="badge" id="bAband">—</span>
+          </div>
+          <div class="value" id="kAband">—</div>
+          <div class="hint">Lower is better (often cost + delays)</div>
+        </div>
+
+        <div class="kpi">
+          <div class="name">
+            <span>Adherence (PDC)</span>
+            <span class="badge" id="bPDC">—</span>
+          </div>
+          <div class="value" id="kPDC">—</div>
+          <div class="hint">Common reference goal: ≥0.80 (varies)</div>
+        </div>
+
+        <div class="kpi">
+          <div class="name">
+            <span>PA denial rate</span>
+            <span class="badge" id="bDenial">—</span>
+          </div>
+          <div class="value" id="kDenial">—</div>
+          <div class="hint">Lower is better (track reasons + rework)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main area -->
+    <section class="main">
+      <div class="charts">
+        <div class="card">
+          <div class="chartHead">
+            <div>
+              <h2>13-month trend: Access & friction</h2>
+              <div class="sub">Median time-to-therapy (days) + abandonment (%)</div>
+            </div>
+            <div class="badge" id="trendNote">Segmented by filters</div>
+          </div>
+          <canvas id="trendChart"></canvas>
+        </div>
+
+        <div class="card">
+          <div class="chartHead">
+            <div>
+              <h2>Queue health (cases aging by workflow step)</h2>
+              <div class="sub">0–2 days • 3–7 • 8–14 • 15+ (find bottlenecks)</div>
+            </div>
+          </div>
+          <canvas id="queueChart"></canvas>
+        </div>
+
+        <div class="card">
+          <div class="chartHead">
+            <div>
+              <h2>Top denial reasons (PA)</h2>
+              <div class="sub">Use this to target standard templates + “PA-ready” checks</div>
+            </div>
+          </div>
+          <canvas id="denialChart"></canvas>
+        </div>
+      </div>
+
+      <aside class="card side">
+        <h2>Action Panel: “Next best fixes”</h2>
+        <ul class="list" id="actions"></ul>
+        <div class="small" id="actionExplain"></div>
+
+        <div class="footer">
+          <span class="badge">Workflow: Referral → BI → PA → Fill → Ship/Admin → Follow-up</span>
+          <span class="badge">Use p90 time for “long tail” delays</span>
+        </div>
+      </aside>
+    </section>
+  </div>
+
+  <script>
+    // ---------- Helpers ----------
+    function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+    function pct(n){ return `${n.toFixed(1)}%`; }
+    function days(n){ return `${n.toFixed(1)} d`; }
+    function scoreBadge(el, status){
+      el.classList.remove("good","warn","bad");
+      if(status) el.classList.add(status);
+    }
+
+    // Simple deterministic-ish "random" based on string (for repeatable demo values)
+    function hashCode(str){
+      let h = 2166136261;
+      for(let i=0;i<str.length;i++){
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return (h >>> 0);
+    }
+    function seededRand(seed){
+      // Mulberry32
+      let t = seed >>> 0;
+      return function(){
+        t += 0x6D2B79F5;
+        let x = Math.imul(t ^ (t >>> 15), 1 | t);
+        x ^= x + Math.imul(x ^ (x >>> 7), 61 | x);
+        return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+      }
+    }
+
+    // ---------- Base definitions (demo “good looks like” thresholds) ----------
+    const thresholds = {
+      capture_good: 85, capture_warn: 75,  // %
+      ttt_good: 10, ttt_warn: 14,          // days (lower better)
+      aband_good: 8, aband_warn: 12,       // %
+      pdc_good: 0.80, pdc_warn: 0.72,      // ratio
+      denial_good: 15, denial_warn: 22     // %
+    };
+
+    function classifyCapture(v){
+      if(v >= thresholds.capture_good) return ["good","Good"];
+      if(v >= thresholds.capture_warn) return ["warn","Watch"];
+      return ["bad","Fix"];
+    }
+    function classifyTTT(v){
+      if(v <= thresholds.ttt_good) return ["good","Good"];
+      if(v <= thresholds.ttt_warn) return ["warn","Watch"];
+      return ["bad","Fix"];
+    }
+    function classifyLowBetter(v, goodMax, warnMax){
+      if(v <= goodMax) return ["good","Good"];
+      if(v <= warnMax) return ["warn","Watch"];
+      return ["bad","Fix"];
+    }
+    function classifyPDC(v){
+      if(v >= thresholds.pdc_good) return ["good","Good"];
+      if(v >= thresholds.pdc_warn) return ["warn","Watch"];
+      return ["bad","Fix"];
+    }
+
+    // ---------- Data generator based on filters ----------
+    const months = (() => {
+      // last 13 months labels (simple)
+      const now = new Date();
+      const out = [];
+      for(let i=12;i>=0;i--){
+        const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+        out.push(d.toLocaleString(undefined, {month:"short", year:"2-digit"}));
+      }
+      return out;
+    })();
+
+    function getFilters(){
+      return {
+        payer: document.getElementById("payer").value,
+        drugClass: document.getElementById("drugClass").value,
+        site: document.getElementById("site").value,
+        clinic: document.getElementById("clinic").value
+      };
+    }
+
+    function computeDemoModel(f){
+      const key = `${f.payer}|${f.drugClass}|${f.site}|${f.clinic}`;
+      const rand = seededRand(hashCode(key));
+
+      // Base KPI values
+      let capture = 84 + (rand()*10 - 5);             // %
+      let ttt = 12 + (rand()*6 - 3);                  // days
+      let aband = 10 + (rand()*6 - 3);                // %
+      let pdc = 0.79 + (rand()*0.10 - 0.05);          // ratio
+      let denial = 18 + (rand()*10 - 5);              // %
+
+      // Modifiers by selections (simple, intuitive)
+      if(f.payer === "Medicaid"){ ttt += 1.5; denial += 2.0; }
+      if(f.payer === "Medicare"){ aband += 1.0; }
+      if(f.drugClass === "Oncology"){ ttt += 0.8; pdc -= 0.02; }
+      if(f.drugClass === "Neurology"){ pdc += 0.02; }
+      if(f.site === "Home Infusion"){ ttt += 1.0; }
+      if(f.site === "Freestanding Infusion"){ ttt -= 0.4; }
+      if(f.clinic === "Clinic C"){ denial += 1.5; }
+      if(f.clinic === "Clinic A"){ capture += 1.0; }
+
+      // Clamp
+      capture = clamp(capture, 60, 97);
+      ttt = clamp(ttt, 6, 24);
+      aband = clamp(aband, 3, 22);
+      pdc = clamp(pdc, 0.60, 0.92);
+      denial = clamp(denial, 8, 35);
+
+      // Trends: create 13 months with slight variation
+      const tttTrend = months.map((_, i) => clamp(ttt + (rand()*1.8 - 0.9) + (i-12)*(-0.06), 5, 26));
+      const abandTrend = months.map((_, i) => clamp(aband + (rand()*1.4 - 0.7) + (i-12)*(-0.04), 2, 25));
+
+      // Queue aging: steps x buckets
+      const steps = ["Benefits inv.", "Prior auth", "Fill sched.", "Ship/Admin", "Follow-up"];
+      const buckets = ["0–2d","3–7d","8–14d","15+d"];
+      // Higher ttt => more older buckets
+      const friction = (ttt - 10) / 10; // 0-ish good, >0 more friction
+      const queue = steps.map(() => {
+        const base = 40 + rand()*30; // total-ish
+        const b0 = clamp(base*(0.55 - 0.10*friction) + rand()*4, 8, 80);
+        const b1 = clamp(base*(0.28 + 0.05*friction) + rand()*4, 5, 60);
+        const b2 = clamp(base*(0.12 + 0.04*friction) + rand()*3, 2, 45);
+        const b3 = clamp(base*(0.05 + 0.03*friction) + rand()*2, 1, 30);
+        return [b0,b1,b2,b3].map(x => Math.round(x));
+      });
+
+      // Denial reasons
+      const reasons = [
+        "Missing notes/labs",
+        "Criteria not met",
+        "Non-formulary / step therapy",
+        "Site-of-care not approved",
+        "Coverage inactive / wrong plan"
+      ];
+      const reasonVals = reasons.map(() => Math.round(10 + rand()*20));
+      // Nudge “missing notes/labs” up when denial higher
+      reasonVals[0] = Math.round(reasonVals[0] + (denial-18)*0.6);
+
+      // Suggested actions driven by biggest pain
+      const maxReasonIdx = reasonVals.indexOf(Math.max(...reasonVals));
+      const biggestReason = reasons[maxReasonIdx];
+
+      return {
+        kpis: { capture, ttt, aband, pdc, denial },
+        trends: { labels: months, tttTrend, abandTrend },
+        queue: { steps, buckets, data: queue },
+        denials: { reasons, values: reasonVals },
+        driver: { biggestReason }
+      };
+    }
+
+    // ---------- Charts ----------
+    let trendChart, queueChart, denialChart;
+
+    function buildCharts(model){
+      // Trend (2-axis)
+      const tctx = document.getElementById("trendChart");
+      trendChart = new Chart(tctx, {
+        type: "line",
+        data: {
+          labels: model.trends.labels,
+          datasets: [
+            {
+              label: "Median time-to-therapy (days)",
+              data: model.trends.tttTrend,
+              borderWidth: 2,
+              tension: 0.35,
+              yAxisID: "yDays"
+            },
+            {
+              label: "Abandonment (%)",
+              data: model.trends.abandTrend,
+              borderWidth: 2,
+              tension: 0.35,
+              yAxisID: "yPct"
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: "#e8eefc" } },
+            tooltip: { mode:"index", intersect:false }
+          },
+          scales: {
+            x: { ticks: { color: "#a9b4d0" }, grid: { color: "rgba(36,49,82,.35)" } },
+            yDays: {
+              position: "left",
+              ticks: { color: "#a9b4d0" },
+              grid: { color: "rgba(36,49,82,.35)" },
+              title: { display:true, text:"Days", color:"#a9b4d0" }
+            },
+            yPct: {
+              position: "right",
+              ticks: { color: "#a9b4d0", callback: (v)=> v + "%" },
+              grid: { drawOnChartArea:false },
+              title: { display:true, text:"Percent", color:"#a9b4d0" }
+            }
+          }
+        }
+      });
+
+      // Queue (stacked bars)
+      const qctx = document.getElementById("queueChart");
+      const qDatasets = model.queue.buckets.map((b, bi) => ({
+        label: b,
+        data: model.queue.data.map(stepArr => stepArr[bi]),
+        borderWidth: 1,
+        stack: "stack1"
+      }));
+      queueChart = new Chart(qctx, {
+        type: "bar",
+        data: { labels: model.queue.steps, datasets: qDatasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color:"#e8eefc" } } },
+          scales: {
+            x: { stacked:true, ticks: { color:"#a9b4d0" }, grid: { color: "rgba(36,49,82,.35)" } },
+            y: { stacked:true, ticks: { color:"#a9b4d0" }, grid: { color: "rgba(36,49,82,.35)" }, title:{ display:true, text:"Case count (demo)", color:"#a9b4d0"} }
+          }
+        }
+      });
+
+      // Denials (horizontal bar)
+      const dctx = document.getElementById("denialChart");
+      denialChart = new Chart(dctx, {
+        type: "bar",
+        data: {
+          labels: model.denials.reasons,
+          datasets: [{
+            label: "Denials (count, demo)",
+            data: model.denials.values,
+            borderWidth: 1
+          }]
+        },
+        options: {
+          indexAxis: "y",
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color:"#e8eefc" } } },
+          scales: {
+            x: { ticks: { color:"#a9b4d0" }, grid: { color: "rgba(36,49,82,.35)" } },
+            y: { ticks: { color:"#a9b4d0" }, grid: { color: "rgba(36,49,82,.15)" } }
+          }
+        }
+      });
+    }
+
+    function updateCharts(model){
+      // Trend
+      trendChart.data.labels = model.trends.labels;
+      trendChart.data.datasets[0].data = model.trends.tttTrend;
+      trendChart.data.datasets[1].data = model.trends.abandTrend;
+      trendChart.update();
+
+      // Queue
+      queueChart.data.labels = model.queue.steps;
+      model.queue.buckets.forEach((_, bi) => {
+        queueChart.data.datasets[bi].data = model.queue.data.map(stepArr => stepArr[bi]);
+      });
+      queueChart.update();
+
+      // Denials
+      denialChart.data.labels = model.denials.reasons;
+      denialChart.data.datasets[0].data = model.denials.values;
+      denialChart.update();
+    }
+
+    // ---------- KPI tiles + action panel ----------
+    function updateTiles(model){
+      const {capture, ttt, aband, pdc, denial} = model.kpis;
+
+      document.getElementById("kCapture").textContent = pct(capture);
+      document.getElementById("kTTT").textContent = days(ttt);
+      document.getElementById("kAband").textContent = pct(aband);
+      document.getElementById("kPDC").textContent = pdc.toFixed(2);
+      document.getElementById("kDenial").textContent = pct(denial);
+
+      const [cStat,cTxt] = classifyCapture(capture);
+      const [tStat,tTxt] = classifyTTT(ttt);
+      const [aStat,aTxt] = classifyLowBetter(aband, thresholds.aband_good, thresholds.aband_warn);
+      const [pStat,pTxt] = classifyPDC(pdc);
+      const [dStat,dTxt] = classifyLowBetter(denial, thresholds.denial_good, thresholds.denial_warn);
+
+      const bCapture = document.getElementById("bCapture"); bCapture.textContent = cTxt; scoreBadge(bCapture, cStat);
+      const bTTT = document.getElementById("bTTT"); bTTT.textContent = tTxt; scoreBadge(bTTT, tStat);
+      const bAband = document.getElementById("bAband"); bAband.textContent = aTxt; scoreBadge(bAband, aStat);
+      const bPDC = document.getElementById("bPDC"); bPDC.textContent = pTxt; scoreBadge(bPDC, pStat);
+      const bDenial = document.getElementById("bDenial"); bDenial.textContent = dTxt; scoreBadge(bDenial, dStat);
+    }
+
+    function updateActions(model){
+      const ul = document.getElementById("actions");
+      ul.innerHTML = "";
+
+      // Identify biggest queue aging step (15+d bucket)
+      const idx15 = model.queue.buckets.indexOf("15+d");
+      const fifteenPlusCounts = model.queue.data.map(arr => arr[idx15]);
+      const worstStepIdx = fifteenPlusCounts.indexOf(Math.max(...fifteenPlusCounts));
+      const worstStep = model.queue.steps[worstStepIdx];
+
+      const biggestReason = model.driver.biggestReason;
+
+      // Create ESL-friendly actions
+      const actions = [
+        `Bottleneck focus: <b>${worstStep}</b>. Add a checkpoint to stop missing info before the next step.`,
+        `Top denial driver: <b>${biggestReason}</b>. Standardize a “PA-ready checklist” (notes + labs + correct diagnosis).`,
+        `Reduce long delays: review the oldest cases (15+ days) weekly and assign an owner + due date.`
+      ];
+
+      actions.forEach(a=>{
+        const li = document.createElement("li");
+        li.innerHTML = a;
+        ul.appendChild(li);
+      });
+
+      document.getElementById("actionExplain").textContent =
+        "Tip: These are demo suggestions. In real use, actions should link to workflow owners, templates, and peer benchmarks.";
+    }
+
+    // ---------- Main render ----------
+    function render(){
+      const f = getFilters();
+      const model = computeDemoModel(f);
+
+      updateTiles(model);
+      updateActions(model);
+      updateCharts(model);
+
+      // stamp
+      const now = new Date();
+      document.getElementById("stamp").textContent =
+        `Updated: ${now.toLocaleString(undefined, {weekday:"short", year:"numeric", month:"short", day:"2-digit", hour:"2-digit", minute:"2-digit"})}`;
+    }
+
+    function resetFilters(){
+      document.getElementById("payer").value = "All";
+      document.getElementById("drugClass").value = "All";
+      document.getElementById("site").value = "All";
+      document.getElementById("clinic").value = "All";
+      render();
+    }
+
+    // ---------- Init ----------
+    const initial = computeDemoModel(getFilters());
+    buildCharts(initial);
+    render();
+
+    ["payer","drugClass","site","clinic"].forEach(id => {
+      document.getElementById(id).addEventListener("change", render);
+    });
+    document.getElementById("reset").addEventListener("click", resetFilters);
+  </script>
+</body>
+</html>
